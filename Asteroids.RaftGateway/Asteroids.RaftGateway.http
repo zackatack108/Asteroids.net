@@ -1,0 +1,6 @@
+@Asteroids.RaftGateway_HostAddress = http://localhost:5101
+
+GET {{Asteroids.RaftGateway_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

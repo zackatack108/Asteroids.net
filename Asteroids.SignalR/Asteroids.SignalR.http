@@ -1,0 +1,6 @@
+@Asteroids.SignalR_HostAddress = http://localhost:5236
+
+GET {{Asteroids.SignalR_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
