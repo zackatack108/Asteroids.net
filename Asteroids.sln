@@ -3,19 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34701.34
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.API", "Asteroids.API\Asteroids.API.csproj", "{73701120-FD4C-4488-9BE2-8AE516B86B4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.API", "Asteroids.API\Asteroids.API.csproj", "{73701120-FD4C-4488-9BE2-8AE516B86B4C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.Web", "Asteroids.Web\Asteroids.Web.csproj", "{ED759073-5668-4642-A9BC-B118EF224A4D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.Web", "Asteroids.Web\Asteroids.Web.csproj", "{ED759073-5668-4642-A9BC-B118EF224A4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.Tests", "Asteroids.Tests\Asteroids.Tests.csproj", "{C28466C6-5A39-4196-B535-BCC282836A1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.Tests", "Asteroids.Tests\Asteroids.Tests.csproj", "{C28466C6-5A39-4196-B535-BCC282836A1A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.SignalR", "Asteroids.SignalR\Asteroids.SignalR.csproj", "{43E8FEA4-DA21-453E-8DC8-CFB403991F77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.SignalR", "Asteroids.SignalR\Asteroids.SignalR.csproj", "{43E8FEA4-DA21-453E-8DC8-CFB403991F77}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.RaftGateway", "Asteroids.RaftGateway\Asteroids.RaftGateway.csproj", "{08FA02C9-5E9A-48CB-B171-3868D3D26C9D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.RaftGateway", "Asteroids.RaftGateway\Asteroids.RaftGateway.csproj", "{08FA02C9-5E9A-48CB-B171-3868D3D26C9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.RaftNode", "Asteroids.RaftNode\Asteroids.RaftNode.csproj", "{06389FC8-C4A7-4AC9-B0CF-F81130DB6612}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.RaftNode", "Asteroids.RaftNode\Asteroids.RaftNode.csproj", "{06389FC8-C4A7-4AC9-B0CF-F81130DB6612}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Asteroids.Shared", "Asteroids.Shared\Asteroids.Shared.csproj", "{D7D3C035-2E19-4543-A495-D9307B1B2B35}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Asteroids.Shared", "Asteroids.Shared\Asteroids.Shared.csproj", "{D7D3C035-2E19-4543-A495-D9307B1B2B35}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

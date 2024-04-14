@@ -1,7 +1,5 @@
 ﻿using Akka.Actor;
-using Asteroids.Shared;
-using Microsoft.AspNetCore.SignalR;
-using static Asteroids.API.Records;
+using static Asteroids.API.Messages.LobbyMessages;
 
 namespace Asteroids.API.Actors;
 
@@ -15,24 +13,24 @@ public class SignalRActor : ReceiveActor
         this.signalRHandler = signalRHandler;
         this.actorMappings = actorMappings;
 
-        Receive<JoinLobby>(ForwardJoinLobbyMessage);
-        Receive<ChangeLobbyState>(ForwardChangeLobbyStateMessage);
-        Receive<GetLobbyState>(message => ForwardLobbyStateMessage(message));
+        Receive<JoinLobbyMessage>(ForwardJoinLobbyMessage);
+        Receive<LobbyStateChangeMessage>(ForwardChangeLobbyStateMessage);
+        Receive<LobbyStateMessage>(message => ForwardLobbyStateMessage(message));
     }
 
-    private void ForwardJoinLobbyMessage(JoinLobby message)
+    private void ForwardJoinLobbyMessage(JoinLobbyMessage message)
     {
         var lobbyActor = Context.ActorSelection("/user/LobbyActor");
         lobbyActor.Tell(message);
     }
 
-    private void ForwardChangeLobbyStateMessage(ChangeLobbyState message)
+    private void ForwardChangeLobbyStateMessage(LobbyStateChangeMessage message)
     {
         var lobbyActor = Context.ActorSelection("/user/LobbyActor");
         lobbyActor.Tell(message);
     }
 
-    private async Task ForwardLobbyStateMessage(GetLobbyState message)
+    private async Task ForwardLobbyStateMessage(LobbyStateMessage message)
     {
         var lobbyactor = Context.ActorSelection("/user/LobbyActor");
         (Guid, string) lobbyState = await lobbyactor.Ask<(Guid, string)>(message);

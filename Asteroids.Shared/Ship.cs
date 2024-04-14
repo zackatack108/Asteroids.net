@@ -2,10 +2,11 @@
 
 public class Ship
 {
-    public required int X { get; set; }
-    public required int Y { get; set; }
+    public required double PositionX { get; set; }
+    public required double PositionY { get; set; }
     public required int Heading { get; set; }
     public required double Health { get; set; }
-    public required Weapon Weapon { get; set; }
+    public Weapon? Weapon { get; set; }
+    public int TurnSpeed { get; set; } = 10;
 
 }

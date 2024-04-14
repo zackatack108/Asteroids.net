@@ -1,8 +1,7 @@
 ﻿using Akka.Actor;
 using Asteroids.Shared;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Logging;
-using static Asteroids.API.Records;
+using static Asteroids.API.Messages.LobbyMessages;
 
 namespace Asteroids.API;
 
@@ -41,7 +40,7 @@ public class SignalRHandler
     public void JoinLobby(Guid lobbyId, string username)
     {
         Player player = new Player { Username = username, Bank = 0, Score = 0, Ship = null };
-        var joinLobbyMessage = new JoinLobby(lobbyId, player);
+        var joinLobbyMessage = new JoinLobbyMessage(lobbyId, player);
         signalRActor.Tell(joinLobbyMessage);
     }
 
@@ -49,15 +48,15 @@ public class SignalRHandler
     {
         if(Enum.TryParse(state, true, out LobbyState newState))
         {
-            var changeStateMessage = new ChangeLobbyState(lobbyId, newState);
+            var changeStateMessage = new LobbyStateChangeMessage(lobbyId, newState);
             signalRActor.Tell(changeStateMessage);
         }
     }
 
     public void GetLobbyState(Guid lobbyId)
     {
-        var getStateMessage = new GetLobbyState();
-        signalRActor.Tell(getStateMessage);
+        //var getStateMessage = new GetLobbyState(lobby.se);
+        //signalRActor.Tell(getStateMessage);
     }
 
     public async Task SendLobbyState(Guid lobbyId, string state)

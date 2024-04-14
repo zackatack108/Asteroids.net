@@ -2,16 +2,9 @@
 
 public class Lobby
 {
-    public Guid Session { get; init; }
-    public List<Player> Players { get; set; }
-    public LobbyState State { get; set; }
+    public Guid LobbyId { get; init; }
+    public List<Player> Players { get; set; } = new();
+    public LobbyState State { get; set; } = LobbyState.JOINING;
     public Map? Map { get; set; }
-
-    public Lobby()
-    {
-        Session = new();
-        Players = new List<Player>();
-        State = LobbyState.JOINING;
-    }
 
 }
