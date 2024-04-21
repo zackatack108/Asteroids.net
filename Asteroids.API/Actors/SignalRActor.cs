@@ -1,40 +1,87 @@
 ﻿using Akka.Actor;
+using Asteroids.Shared;
+using Microsoft.AspNetCore.SignalR.Client;
 using static Asteroids.API.Messages.LobbyMessages;
 
 namespace Asteroids.API.Actors;
 
 public class SignalRActor : ReceiveActor
 {
-    private readonly SignalRHandler signalRHandler;
-    private readonly Dictionary<Type, IActorRef> actorMappings;
+    //private readonly Dictionary<Type, IActorRef> actorMappings;
+    IActorRef lobbySupervisor;
 
-    public SignalRActor(SignalRHandler signalRHandler, Dictionary<Type, IActorRef> actorMappings)
+    private HubConnection? hubConnection;
+    private readonly string hubUrl;
+
+    public SignalRActor(IActorRef lobbySupervisor, string hubUrl)
     {
-        this.signalRHandler = signalRHandler;
-        this.actorMappings = actorMappings;
+        this.lobbySupervisor = lobbySupervisor;
 
-        Receive<JoinLobbyMessage>(ForwardJoinLobbyMessage);
-        Receive<LobbyStateChangeMessage>(ForwardChangeLobbyStateMessage);
-        Receive<LobbyStateMessage>(message => ForwardLobbyStateMessage(message));
+        _ = OpenConnectionAsync();
+
+        Receive<LobbyJoinMessage>(JoinLobby);
+        Receive<LobbyChangeStateMessage>(ChangeLobbyState);
+        Receive<LobbyStateResponse>(SendLobbyState);
     }
 
-    private void ForwardJoinLobbyMessage(JoinLobbyMessage message)
+    private async Task OpenConnectionAsync()
     {
-        var lobbyActor = Context.ActorSelection("/user/LobbyActor");
-        lobbyActor.Tell(message);
+        hubConnection = new HubConnectionBuilder().WithUrl(hubUrl).Build();
+
+        hubConnection.Closed += async (error) =>
+        {
+            await Task.Delay(new Random().Next(0, 5));
+            await hubConnection.StartAsync();
+        };
+
+        await hubConnection.StartAsync();
     }
 
-    private void ForwardChangeLobbyStateMessage(LobbyStateChangeMessage message)
+    private async Task CloseConnectionAsync()
     {
-        var lobbyActor = Context.ActorSelection("/user/LobbyActor");
-        lobbyActor.Tell(message);
+        if (hubConnection != null)
+        {
+            await hubConnection.StopAsync();
+        }
     }
 
-    private async Task ForwardLobbyStateMessage(LobbyStateMessage message)
+    public void JoinLobby(LobbyJoinMessage message)
     {
-        var lobbyactor = Context.ActorSelection("/user/LobbyActor");
-        (Guid, string) lobbyState = await lobbyactor.Ask<(Guid, string)>(message);
+        lobbySupervisor.Tell(message);
+    }
 
-        await signalRHandler.SendLobbyState(lobbyState.Item1, lobbyState.Item2);
+    public void ChangeLobbyState(LobbyChangeStateMessage message)
+    {
+        lobbySupervisor.Tell(message);
+    }
+
+    public void GetLobbyState(Guid lobbyId)
+    {
+        //var getStateMessage = new GetLobbyState(lobby.se);
+        //signalRActor.Tell(getStateMessage);
+    }
+
+    public void SendLobbyState(LobbyStateResponse message)
+    {
+        try
+        {
+            //logger.LogInformation($"Hub Connection State: {hubConnection.State}");
+
+            if (hubConnection?.State == HubConnectionState.Disconnected)
+            {
+                //logger.LogInformation("Connecting to hub");
+                _ = OpenConnectionAsync();
+            }
+            //logger.LogInformation($"Hub Connection State: {hubConnection.State}");
+            if (hubConnection?.State == HubConnectionState.Connected)
+            {
+                hubConnection.SendAsync("LobbyState", message.lobbyId, message.state);
+            }
+        }
+        catch (Exception ex)
+        {
+            //logger.LogError(ex.Message);
+        }
+
     }
 }

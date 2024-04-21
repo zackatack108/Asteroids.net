@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+
+  asteroid-api-1:
+    container_name: asteroid-api-1
+    build:
+      context: ..
+      dockerfile: ./Asteroids.API/Dockerfile
+    environment:
+      ACTORSYSTEM: "asteroids-actor-system"
+      CLUSTER_PORT: "8081"
+      CLUSTER_IP: "asteroids-api-1"
+      CLUSTER_SEED: "asteroids-api-1:8081"
+      CLUSTER_ROLES: "lobby, signalR"     
+    ports:
+      - 1994:8081
+      - 1995:8080
+
+  # asteroid-api-2:
+  #   container_name: asteroid-api-2
+  #   build:
+  #     context: ..
+  #     dockerfile: ./Asteroids.API/Dockerfile
+  #   environment:
+  #     ACTORSYSTEM: "asteroids-actor-system"
+  #     CLUSTER_PORT: "2551"
+  #     CLUSTER_IP: "asteroids-api-2"
+  #     CLUSTER_SEEDS: "akka.tcp://asteroids-actor-system@asteroids-api-1:2551"
+  #     CLUSTER_ROLES: "lobby, signalR"
+  #   ports:
+  #     - 1996:2551
+  #     - 1997:8080
+
+  asteroid-signalr:
+    container_name: asteroid-signalr
+    build:
+      context: ..
+      dockerfile: ./Asteroids.SignalR/Dockerfile
+    ports:
+      - 1998:8080
+
+  nginx:
+    image: nginx:latest
+    container_name: jz-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      # - nginx_cache_data:/var/cache/nginx
+    ports:
+      - 80:80
+    restart: unless-stopped

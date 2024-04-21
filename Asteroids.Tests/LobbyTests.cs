@@ -18,10 +18,10 @@ public class LobbyTests : TestKit
         var probe = CreateTestProbe();
 
         var player = new Player { Username = "zack", Bank = 0, Score = 0, Ship = null };
-        var joinLobby = new JoinLobbyMessage(guid, player );
+        var joinLobby = new LobbyJoinMessage(guid, player );
 
         lobbyActor.Tell(joinLobby, probe.Ref);
-        var response = probe.ExpectMsg<JoinLobbyResponse>();
+        var response = probe.ExpectMsg<LobbyJoinResponse>();
         response.lobbyId.Should().Be(guid);
         response.players[0].Should().Be(player);
     }
@@ -34,7 +34,7 @@ public class LobbyTests : TestKit
         var probe = CreateTestProbe();
 
         Player player = null;
-        var joinLobby = new JoinLobbyMessage(guid, player);
+        var joinLobby = new LobbyJoinMessage(guid, player);
 
         lobbyActor.Tell(joinLobby, probe.Ref);
         var response = probe.ExpectMsg<LobbyErrorResponse>();
@@ -50,14 +50,14 @@ public class LobbyTests : TestKit
 
         var player1 = new Player { Username = "zack", Bank = 0, Score = 0, Ship = null };
         var player2 = new Player { Username = "robotguy", Bank = 0, Score = 0, Ship = null };
-        var joinLobby1 = new JoinLobbyMessage(guid, player1);
-        var joinLobby2 = new JoinLobbyMessage(guid, player2);
+        var joinLobby1 = new LobbyJoinMessage(guid, player1);
+        var joinLobby2 = new LobbyJoinMessage(guid, player2);
 
         lobbyActor.Tell(joinLobby1, probe.Ref);
-        var response1 = probe.ExpectMsg<JoinLobbyResponse>();
+        var response1 = probe.ExpectMsg<LobbyJoinResponse>();
 
         lobbyActor.Tell(joinLobby2, probe.Ref);
-        var response2 = probe.ExpectMsg<JoinLobbyResponse>();
+        var response2 = probe.ExpectMsg<LobbyJoinResponse>();
 
         response1.lobbyId.Should().Be(guid);
         response1.players[0].Should().Be(player1);
@@ -72,7 +72,7 @@ public class LobbyTests : TestKit
         var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
         var probe = CreateTestProbe();
 
-        var newState = new LobbyStateChangeMessage(guid, LobbyState.ACTIVE);
+        var newState = new LobbyChangeStateMessage(guid, LobbyState.ACTIVE);
 
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
@@ -88,7 +88,7 @@ public class LobbyTests : TestKit
         var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
         var probe = CreateTestProbe();
 
-        var newState = new LobbyStateChangeMessage(guid, LobbyState.INACTIVE);
+        var newState = new LobbyChangeStateMessage(guid, LobbyState.INACTIVE);
 
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
@@ -104,7 +104,7 @@ public class LobbyTests : TestKit
         var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
         var probe = CreateTestProbe();
 
-        var newState = new LobbyStateChangeMessage(guid, LobbyState.RESETTING);
+        var newState = new LobbyChangeStateMessage(guid, LobbyState.RESETTING);
 
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
@@ -120,7 +120,7 @@ public class LobbyTests : TestKit
         var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
         var probe = CreateTestProbe();
 
-        var newState = new LobbyStateChangeMessage(guid, LobbyState.JOINING);
+        var newState = new LobbyChangeStateMessage(guid, LobbyState.JOINING);
 
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();

@@ -6,13 +6,13 @@ public class LobbySupervisorMessages
 {
 
     //Received Messages
-    public record CreateLobbyMessage();
-    public record ListLobbyMessage();
-    public record TerminateLobbyMessage(Guid lobbyId);
+    public record LobbyCreateMessage();
+    public record LobbyListMessage();
+    public record LobbyTerminateMessage(Guid lobbyId);
     
     //Response Messages
-    public record CreateLobbyResponse(string message);
-    public record ListLobbyResponse(List<Lobby> lobbies);
-    public record TerminateLobbyResponse(string message);
+    public record LobbyCreateResponse(string message);
+    public record LobbyListResponse(List<Lobby> lobbies);
+    public record LobbyTerminateResponse(string message);
     public record LobbySupervisorErrorResponse(string errorMessage);
 }

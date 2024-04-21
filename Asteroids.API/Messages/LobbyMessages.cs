@@ -5,13 +5,15 @@ namespace Asteroids.API.Messages;
 public class LobbyMessages
 {
     //Receiving messages
-    public record JoinLobbyMessage(Guid lobbyId, Player player);
-    public record LobbyStateChangeMessage(Guid lobbyId, LobbyState state);
-    public record LobbyStateMessage(Guid lobbyId);
+    public record LobbyJoinMessage(Guid lobbyId, Player player);
+    public record LobbyChangeStateMessage(Guid lobbyId, LobbyState state);
+    public record LobbyCurrentStateMessage(Guid lobbyId);
+    public record LobbyInfoMessage(Guid lobbyId);
 
     //Response messages
-    public record JoinLobbyResponse(Guid lobbyId, List<Player> players);
+    public record LobbyJoinResponse(Guid lobbyId, List<Player> players);
     public record LobbyStateResponse(Guid lobbyId, LobbyState state);
+    public record LobbyInfoResponse(Lobby lobby);
     public record LobbyErrorResponse(string ErrorMsg);
 
 }

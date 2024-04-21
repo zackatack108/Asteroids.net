@@ -40,7 +40,7 @@ public class SignalRHandler
     public void JoinLobby(Guid lobbyId, string username)
     {
         Player player = new Player { Username = username, Bank = 0, Score = 0, Ship = null };
-        var joinLobbyMessage = new JoinLobbyMessage(lobbyId, player);
+        var joinLobbyMessage = new LobbyJoinMessage(lobbyId, player);
         signalRActor.Tell(joinLobbyMessage);
     }
 
@@ -48,7 +48,7 @@ public class SignalRHandler
     {
         if(Enum.TryParse(state, true, out LobbyState newState))
         {
-            var changeStateMessage = new LobbyStateChangeMessage(lobbyId, newState);
+            var changeStateMessage = new LobbyChangeStateMessage(lobbyId, newState);
             signalRActor.Tell(changeStateMessage);
         }
     }

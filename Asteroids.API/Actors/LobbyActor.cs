@@ -15,12 +15,13 @@ public class LobbyActor : ReceiveActor
     {
         lobby = new Lobby { LobbyId = lobbyId };
 
-        Receive<JoinLobbyMessage>(HandleLobbyJoin);
-        Receive<LobbyStateChangeMessage>(ChangeStateHandler);
-        Receive<LobbyStateMessage>(GetState);
+        Receive<LobbyJoinMessage>(HandleLobbyJoin);
+        Receive<LobbyChangeStateMessage>(ChangeStateHandler);
+        Receive<LobbyCurrentStateMessage>(GetState);
+        Receive<LobbyInfoMessage>(GetInfo);
     }
 
-    private void HandleLobbyJoin(JoinLobbyMessage joinLobby)
+    private void HandleLobbyJoin(LobbyJoinMessage joinLobby)
     {
 
         if(joinLobby.lobbyId != lobby.LobbyId)
@@ -40,7 +41,7 @@ public class LobbyActor : ReceiveActor
             }
             lobby.Players.Add(joinLobby.player);
             Log.Info($"Player {joinLobby.player.Username} added to lobby {joinLobby.lobbyId}");
-            Sender.Tell(new JoinLobbyResponse(lobby.LobbyId, lobby.Players));
+            Sender.Tell(new LobbyJoinResponse(lobby.LobbyId, lobby.Players));
         }
         else
         {
@@ -50,7 +51,7 @@ public class LobbyActor : ReceiveActor
         }
     }
 
-    private void ChangeStateHandler(LobbyStateChangeMessage newState)
+    private void ChangeStateHandler(LobbyChangeStateMessage newState)
     {
         if (newState.lobbyId != lobby.LobbyId)
         {
@@ -91,7 +92,7 @@ public class LobbyActor : ReceiveActor
         //}
     }
 
-    private void GetState(LobbyStateMessage state)
+    private void GetState(LobbyCurrentStateMessage state)
     {
         if (state.lobbyId != lobby.LobbyId)
         {
@@ -99,8 +100,23 @@ public class LobbyActor : ReceiveActor
             Log.Error(errorMsg);
             Sender.Tell(new LobbyErrorResponse(errorMsg));
         }
-
-        Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
+        else
+        {
+            Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
+        }
     }
+    
+    private void GetInfo(LobbyInfoMessage info)
+    {
+        if(info.lobbyId == lobby.LobbyId)
+        {
+            Sender.Tell(new LobbyInfoResponse(lobby));
+        }
+        else
+        {
+            Sender.Tell(new LobbyErrorResponse("Lobby Id not found"));
+        }
+    }
+
     public static Props Props(Guid lobbyId) => Akka.Actor.Props.Create(() => new LobbyActor(lobbyId));
 }
