@@ -83,5 +83,8 @@ public class SignalRActor : ReceiveActor
             //logger.LogError(ex.Message);
         }
 
+
     }
+    public static Props Props(IActorRef lobbySupervisor, string hubUrl)
+            => Akka.Actor.Props.Create(() => new SignalRActor(lobbySupervisor, hubUrl));
 }

@@ -4,6 +4,7 @@ using Akka.Cluster.Tools.Singleton;
 using Akka.Configuration;
 using Akka.DependencyInjection;
 using Asteroids.API.Actors;
+using DotNetty.Transport.Bootstrapping;
 
 namespace Asteroids.API.Services;
 
@@ -25,15 +26,13 @@ public class ClusterAkkaService : IHostedService, IActorBridge
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var dependencyInjectionSetup = DependencyResolverSetup.Create(serviceProvider);
-
         var actorSystemName = Environment.GetEnvironmentVariable("ACTORSYSTEM");
         var clusterPort = int.Parse(Environment.GetEnvironmentVariable("CLUSTER_PORT"));
         var clusterIp = Environment.GetEnvironmentVariable("CLUSTER_IP");
         var clusterSeed = Environment.GetEnvironmentVariable("CLUSTER_SEED");
         var clusterRoles = Environment.GetEnvironmentVariable("CLUSTER_ROLES");
 
-        var seedNode = $"\"akka.tcp://{actorSystemName}@{clusterIp}:{clusterPort}\"";
+        var seedNode = $"\"akka.tcp://{actorSystemName}@{clusterSeed}\"";
 
         var roles = clusterRoles?.Split(',').Select(role => $"\"{role.Trim()}\"").ToList();
         var rolesString = string.Join(", ", roles);
@@ -57,13 +56,12 @@ public class ClusterAkkaService : IHostedService, IActorBridge
             }}
         ");
 
-        actorSystem = ActorSystem.Create("asteroids-actor-system", config);
-        var cluster = Cluster.Get(actorSystem);
+        var bootstrap = BootstrapSetup.Create().WithConfig(config);
+        var diSetup = DependencyResolverSetup.Create(serviceProvider);
+        var actorsystemSetup = bootstrap.And(diSetup);
 
-        //var lobbySupervisorSingletonProps = ClusterSingletonProxy.Props(
-        //    singletonManagerPath: "/user/lobbiesSingletonManager",
-        //    settings: ClusterSingletonProxySettings.Create(actorSystem));
-        //actorSystem.ActorOf(lobbySupervisorSingletonProps, "lobbySupervisorProxy");
+        actorSystem = ActorSystem.Create("asteroids-actor-system", actorsystemSetup);
+        var cluster = Cluster.Get(actorSystem);
 
         var selfAddress = cluster.SelfAddress;
         Cluster.Get(actorSystem).Join(selfAddress);
@@ -86,20 +84,15 @@ public class ClusterAkkaService : IHostedService, IActorBridge
 
         if (cluster.SelfRoles.Contains("signalR"))
         {
-            var proxyProps = ClusterSingletonProxy.Props(
-                singletonManagerPath: "/user/lobbiesSingletonManager",
-                settings: ClusterSingletonProxySettings.Create(actorSystem));
-            IActorRef lobbySupervisorRef = actorSystem.ActorOf(proxyProps, "lobbySupervisorProxy");
+            var signalRHub = Environment.GetEnvironmentVariable("SIGNALRHUB");
 
-            var apiActorProps = DependencyResolver
-                .For(actorSystem)
-                .Props<SignalRActor>(lobbySupervisorRef);
-            actorSystem.ActorOf(apiActorProps, "signalRsingleton");
+            var siganlRActorProps = Props.Create(() => new SignalRActor(lobbySupervisorProxyRef, signalRHub));
+            var signalRActor = actorSystem.ActorOf(siganlRActorProps, "siganlRActor");
 
             var signalRProxyProps = ClusterSingletonProxy.Props(
                 singletonManagerPath: "/user/signalRSingleton",
                 settings: ClusterSingletonProxySettings.Create(actorSystem));
-            signalRProxyRef = actorSystem.ActorOf(signalRProxyProps, "signalRProxy");
+            signalRProxyRef = actorSystem.ActorOf(signalRProxyProps, "signalRProxy");            
         }
 
 

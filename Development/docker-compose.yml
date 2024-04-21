@@ -8,29 +8,47 @@ services:
       context: ..
       dockerfile: ./Asteroids.API/Dockerfile
     environment:
+      SIGNALRHUB: "asteroid-signalr"
       ACTORSYSTEM: "asteroids-actor-system"
       CLUSTER_PORT: "8081"
-      CLUSTER_IP: "asteroids-api-1"
-      CLUSTER_SEED: "asteroids-api-1:8081"
+      CLUSTER_IP: "asteroid-api-1"
+      CLUSTER_SEED: "asteroid-api-1:8081"
       CLUSTER_ROLES: "lobby, signalR"     
     ports:
       - 1994:8081
       - 1995:8080
 
-  # asteroid-api-2:
-  #   container_name: asteroid-api-2
-  #   build:
-  #     context: ..
-  #     dockerfile: ./Asteroids.API/Dockerfile
-  #   environment:
-  #     ACTORSYSTEM: "asteroids-actor-system"
-  #     CLUSTER_PORT: "2551"
-  #     CLUSTER_IP: "asteroids-api-2"
-  #     CLUSTER_SEEDS: "akka.tcp://asteroids-actor-system@asteroids-api-1:2551"
-  #     CLUSTER_ROLES: "lobby, signalR"
-  #   ports:
-  #     - 1996:2551
-  #     - 1997:8080
+  asteroid-api-2:
+    container_name: asteroid-api-2
+    build:
+      context: ..
+      dockerfile: ./Asteroids.API/Dockerfile
+    environment:
+      SIGNALRHUB: "asteroid-signalr"
+      ACTORSYSTEM: "asteroids-actor-system"
+      CLUSTER_PORT: "8081"
+      CLUSTER_IP: "asteroid-api-2"
+      CLUSTER_SEED: "asteroid-api-1:8081"
+      CLUSTER_ROLES: "lobby, signalR"     
+    ports:
+      - 1996:8081
+      - 1997:8080
+
+  asteroid-api-3:
+    container_name: asteroid-api-3
+    build:
+      context: ..
+      dockerfile: ./Asteroids.API/Dockerfile
+    environment:
+      SIGNALRHUB: "asteroid-signalr"
+      ACTORSYSTEM: "asteroids-actor-system"
+      CLUSTER_PORT: "8081"
+      CLUSTER_IP: "asteroid-api-3"
+      CLUSTER_SEED: "asteroid-api-1:8081"
+      CLUSTER_ROLES: "lobby, signalR"     
+    ports:
+      - 1998:8081
+      - 1999:8080
 
   asteroid-signalr:
     container_name: asteroid-signalr
@@ -38,7 +56,7 @@ services:
       context: ..
       dockerfile: ./Asteroids.SignalR/Dockerfile
     ports:
-      - 1998:8080
+      - 2000:8080
 
   nginx:
     image: nginx:latest
