@@ -2,10 +2,8 @@
 
 public class Map
 {
-    public required Guid MapId { get; init; }
-    public required List<Player> Players { get; set; }
-    public List<Asteroid>? Asteroids { get; set; }
-    public MapState State { get; set; }
-    public required int Height { get; init; }
-    public required int Width { get; init; }
+    public List<Player> Players { get; set; } = new();
+    public List<Asteroid> Asteroids { get; set; } = new();
+    public int Height { get; set; } = 500;
+    public int Width { get; set; } = 500;
 }

@@ -1,35 +1,62 @@
 ﻿using Akka.Actor;
 using Akka.Event;
+using Asteroids.API.Utils;
 using Asteroids.Shared;
 using static Asteroids.API.Messages.LobbyMessages;
 
 namespace Asteroids.API.Actors;
 
-public class LobbyActor : ReceiveActor
+public class LobbyActor : ReceiveActor, IWithTimers
 {
-    private IActorRef? mapActor;
+    private IActorRef supervisor;
     private Lobby lobby;
+    private MapUtil mapUtil;
     private readonly ILoggingAdapter Log = Context.GetLogger();
+    public ITimerScheduler Timers { get; set; }
 
-    public LobbyActor(Guid lobbyId)
+    private const double tickInterval = 0.1;
+    private const string runTickTimerKey = "TickTimer";
+
+    public LobbyActor(Guid lobbyId, bool restarted, IActorRef supervisor)
     {
-        lobby = new Lobby { LobbyId = lobbyId };
+        if(supervisor == null)
+        {
+            this.supervisor = this.Self;
+        } 
+        else
+        {
+            this.supervisor = supervisor;
+        }
+        lobby = new Lobby { LobbyId = lobbyId, Map = new() };
+        mapUtil = new(lobby.Map, this.Self, supervisor);
 
         Receive<LobbyJoinMessage>(HandleLobbyJoin);
         Receive<LobbyChangeStateMessage>(ChangeStateHandler);
         Receive<LobbyCurrentStateMessage>(GetState);
         Receive<LobbyInfoMessage>(GetInfo);
+        Receive<LobbyMovePlayerMessage>(MovePlayer);
+        Receive<LobbyGetMapMessage>(_ => HandleGettingMap());
+        Receive<LobbySetMapSizeMessage>(SetMapSize);
+        Receive<LobbyUpdateMapMessage>(_ => UpdateMap());
+
+        if (restarted)
+        {
+
+        }
+    }
+
+    private void StartTickTimer()
+    {
+        Timers.StartPeriodicTimer(
+            runTickTimerKey,
+            new LobbyUpdateMapMessage(),
+            TimeSpan.FromSeconds(0.05),
+            TimeSpan.FromSeconds(tickInterval)
+        );
     }
 
     private void HandleLobbyJoin(LobbyJoinMessage joinLobby)
     {
-
-        if(joinLobby.lobbyId != lobby.LobbyId)
-        {
-            string errorMsg = "Error invalid lobby ID";
-            Log.Error(errorMsg);
-            Sender.Tell(new LobbyErrorResponse(errorMsg));
-        }
 
         if (joinLobby.player != null)
         {
@@ -39,9 +66,9 @@ public class LobbyActor : ReceiveActor
                 Log.Error(errorMsg);
                 Sender.Tell(new LobbyErrorResponse(errorMsg));
             }
-            lobby.Players.Add(joinLobby.player);
-            Log.Info($"Player {joinLobby.player.Username} added to lobby {joinLobby.lobbyId}");
-            Sender.Tell(new LobbyJoinResponse(lobby.LobbyId, lobby.Players));
+            lobby.Map.Players.Add(joinLobby.player);
+            Log.Info($"Player {joinLobby.player.Username} added to lobby {lobby.LobbyId}");
+            Sender.Tell(new LobbyJoinResponse(lobby));
         }
         else
         {
@@ -53,13 +80,6 @@ public class LobbyActor : ReceiveActor
 
     private void ChangeStateHandler(LobbyChangeStateMessage newState)
     {
-        if (newState.lobbyId != lobby.LobbyId)
-        {
-            string errorMsg = "Error invalid lobby ID";
-            Log.Error(errorMsg);
-            Sender.Tell(new LobbyErrorResponse(errorMsg));
-        }
-
         switch (newState.state) 
         {
             case LobbyState.JOINING:
@@ -67,7 +87,7 @@ public class LobbyActor : ReceiveActor
                 break;
             case LobbyState.ACTIVE:
                 lobby.State = newState.state;
-                SendPlayersToMap();
+                StartTickTimer();
                 break;
             case LobbyState.RESETTING:
                 lobby.State = newState.state;
@@ -81,42 +101,50 @@ public class LobbyActor : ReceiveActor
                 Log.Warning($"Unsupported lobby state: {newState.state}");
                 break;
         }
-        Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
-    }
-
-    private void SendPlayersToMap()
-    {
-        //foreach (var player in lobby.Players)
-        //{
-        //    mapActor.Tell(new PlayerJoined(player));
-        //}
+        Sender.Tell(new LobbyStateResponse(lobby.State));
     }
 
     private void GetState(LobbyCurrentStateMessage state)
     {
-        if (state.lobbyId != lobby.LobbyId)
-        {
-            string errorMsg = "Error invalid lobby ID";
-            Log.Error(errorMsg);
-            Sender.Tell(new LobbyErrorResponse(errorMsg));
-        }
-        else
-        {
-            Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
-        }
+        Sender.Tell(new LobbyStateResponse(lobby.State));
     }
     
     private void GetInfo(LobbyInfoMessage info)
     {
-        if(info.lobbyId == lobby.LobbyId)
-        {
-            Sender.Tell(new LobbyInfoResponse(lobby));
-        }
-        else
-        {
-            Sender.Tell(new LobbyErrorResponse("Lobby Id not found"));
-        }
+        Sender.Tell(new LobbyInfoResponse(lobby));
     }
 
-    public static Props Props(Guid lobbyId) => Akka.Actor.Props.Create(() => new LobbyActor(lobbyId));
+    private void MovePlayer(LobbyMovePlayerMessage message)
+    {
+        mapUtil.HandleShipMovement(message);
+    }
+
+    private void HandleGettingMap()
+    {
+        Map response = mapUtil.GetMap();
+        Sender.Tell(new LobbyMapResponse(response));
+    }
+
+    private void SetMapSize(LobbySetMapSizeMessage message)
+    {
+        if (lobby.State.Equals(LobbyState.ACTIVE))
+        {
+            Sender.Tell(new LobbyErrorResponse("Can't modify size cause map is active"));
+            return;
+        }
+        mapUtil.ChangeMapSize(message.height, message.width);
+    }
+
+    private void UpdateMap()
+    {
+        if (lobby.State != LobbyState.ACTIVE)
+        {
+            Log.Warning("Cannot update map because lobby is not in the active state.");
+            return;
+        }
+
+        mapUtil.RunGameTick();
+    }
+
+    public static Props Props(Guid lobbyId, bool restarted, IActorRef supervisor) => Akka.Actor.Props.Create(() => new LobbyActor(lobbyId, restarted, supervisor));
 }

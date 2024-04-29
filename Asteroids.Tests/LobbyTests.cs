@@ -14,23 +14,23 @@ public class LobbyTests : TestKit
     public void Player_is_able_to_join_lobby()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var player = new Player { Username = "zack", Bank = 0, Score = 0, Ship = null };
-        var joinLobby = new LobbyJoinMessage(guid, player );
+        var joinLobby = new LobbyJoinMessage(guid, player);
 
         lobbyActor.Tell(joinLobby, probe.Ref);
         var response = probe.ExpectMsg<LobbyJoinResponse>();
-        response.lobbyId.Should().Be(guid);
-        response.players[0].Should().Be(player);
+        response.lobby.LobbyId.Should().Be(guid);
+        response.lobby.Map.Players[0].Should().Be(player);
     }
 
     [Test]
     public void Lobby_should_send_error_message_if_no_player_is_found()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         Player player = null;
@@ -38,14 +38,14 @@ public class LobbyTests : TestKit
 
         lobbyActor.Tell(joinLobby, probe.Ref);
         var response = probe.ExpectMsg<LobbyErrorResponse>();
-        response.ErrorMsg.Should().Be("Player not found");
+        response.errorMsg.Should().Be("Player not found");
     }
 
     [Test]
     public void Multiple_players_can_be_in_a_lobby()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var player1 = new Player { Username = "zack", Bank = 0, Score = 0, Ship = null };
@@ -59,17 +59,17 @@ public class LobbyTests : TestKit
         lobbyActor.Tell(joinLobby2, probe.Ref);
         var response2 = probe.ExpectMsg<LobbyJoinResponse>();
 
-        response1.lobbyId.Should().Be(guid);
-        response1.players[0].Should().Be(player1);
-        response2.lobbyId.Should().Be(guid);
-        response2.players[1].Should().Be(player2);
+        response1.lobby.LobbyId.Should().Be(guid);
+        response1.lobby.Map.Players[0].Should().Be(player1);
+        response2.lobby.LobbyId.Should().Be(guid);
+        response2.lobby.Map.Players[1].Should().Be(player2);
     }
 
     [Test]
     public void Lobby_state_can_be_changed_to_active()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var newState = new LobbyChangeStateMessage(guid, LobbyState.ACTIVE);
@@ -77,7 +77,6 @@ public class LobbyTests : TestKit
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
 
-        response.lobbyId.Should().Be(guid);
         response.state.Should().Be(LobbyState.ACTIVE);
     }
 
@@ -85,7 +84,7 @@ public class LobbyTests : TestKit
     public void Lobby_state_can_be_changed_to_inactive()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var newState = new LobbyChangeStateMessage(guid, LobbyState.INACTIVE);
@@ -93,7 +92,6 @@ public class LobbyTests : TestKit
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
 
-        response.lobbyId.Should().Be(guid);
         response.state.Should().Be(LobbyState.INACTIVE);
     }
 
@@ -101,7 +99,7 @@ public class LobbyTests : TestKit
     public void Lobby_state_can_be_changed_to_resetting()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var newState = new LobbyChangeStateMessage(guid, LobbyState.RESETTING);
@@ -109,7 +107,6 @@ public class LobbyTests : TestKit
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
 
-        response.lobbyId.Should().Be(guid);
         response.state.Should().Be(LobbyState.JOINING);
     }
 
@@ -117,7 +114,7 @@ public class LobbyTests : TestKit
     public void Lobby_state_can_be_changed_to_joining()
     {
         var guid = new Guid();
-        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid));
+        var lobbyActor = this.Sys.ActorOf(LobbyActor.Props(guid, false, null));
         var probe = CreateTestProbe();
 
         var newState = new LobbyChangeStateMessage(guid, LobbyState.JOINING);
@@ -125,7 +122,7 @@ public class LobbyTests : TestKit
         lobbyActor.Tell(newState, probe.Ref);
         var response = probe.ExpectMsg<LobbyStateResponse>();
 
-        response.lobbyId.Should().Be(guid);
         response.state.Should().Be(LobbyState.JOINING);
     }
+
 }

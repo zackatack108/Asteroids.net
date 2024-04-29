@@ -9,11 +9,17 @@ public class LobbyMessages
     public record LobbyChangeStateMessage(Guid lobbyId, LobbyState state);
     public record LobbyCurrentStateMessage(Guid lobbyId);
     public record LobbyInfoMessage(Guid lobbyId);
+    public record LobbyMovePlayerMessage(Guid lobbyId, Player player, MovementDirection direction);
+    public record LobbyGetMapMessage(Guid lobbyId);
+    public record LobbySetMapSizeMessage(Guid lobbyId, int height, int width);
+    public record LobbyUpdateMapMessage();
+    public record LobbyCrashMessage(Guid lobbyId);
 
     //Response messages
-    public record LobbyJoinResponse(Guid lobbyId, List<Player> players);
-    public record LobbyStateResponse(Guid lobbyId, LobbyState state);
+    public record LobbyJoinResponse(Lobby lobby);
+    public record LobbyStateResponse(LobbyState state);
     public record LobbyInfoResponse(Lobby lobby);
-    public record LobbyErrorResponse(string ErrorMsg);
+    public record LobbyMapResponse(Map map);
+    public record LobbyErrorResponse(string errorMsg);
 
 }

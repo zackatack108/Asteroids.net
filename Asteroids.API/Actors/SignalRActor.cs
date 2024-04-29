@@ -75,7 +75,7 @@ public class SignalRActor : ReceiveActor
             //logger.LogInformation($"Hub Connection State: {hubConnection.State}");
             if (hubConnection?.State == HubConnectionState.Connected)
             {
-                hubConnection.SendAsync("LobbyState", message.lobbyId, message.state);
+                hubConnection.SendAsync("LobbyState", message.state);
             }
         }
         catch (Exception ex)

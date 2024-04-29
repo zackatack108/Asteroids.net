@@ -78,8 +78,7 @@ public class ClusterAkkaService : IHostedService, IActorBridge
             var lobbySupervisorProxyProps = ClusterSingletonProxy.Props(
                 singletonManagerPath: "/user/lobbiesSingletonManager",
                 settings: ClusterSingletonProxySettings.Create(actorSystem));
-            lobbySupervisorProxyRef = actorSystem.ActorOf(lobbySupervisorProxyProps, "lobbySupervisorProxy");
-          
+            lobbySupervisorProxyRef = actorSystem.ActorOf(lobbySupervisorProxyProps, "lobbySupervisorProxy");          
         }
 
         if (cluster.SelfRoles.Contains("signalR"))
