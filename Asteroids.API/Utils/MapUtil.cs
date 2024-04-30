@@ -1,5 +1,7 @@
 ﻿using Akka.Actor;
+using Asteroids.API.Services;
 using Asteroids.Shared;
+using Microsoft.AspNetCore.SignalR.Client;
 using static Asteroids.API.Messages.LobbyMessages;
 
 namespace Asteroids.API.Utils;
@@ -7,14 +9,32 @@ namespace Asteroids.API.Utils;
 public class MapUtil
 {
     private Map map;
-    IActorRef actor;
-    IActorRef supervisor;
+    private IActorRef actor;
+    private IActorRef supervisor;
+    private SignalRService signalRService;
 
-    public MapUtil(Map map, IActorRef actor, IActorRef supervisor)
+    public MapUtil(Map map, IActorRef actor, IActorRef supervisor, SignalRService signalRService)
     {
         this.map = map;
         this.actor = actor;
         this.supervisor = supervisor;
+        this.signalRService = signalRService;
+    }
+
+    public void ShufflePlayerLocation()
+    {
+        Random random = new Random();
+
+        foreach (var player in map.Players)
+        {
+            int maxX = map.Width;
+            int maxY = map.Height;
+
+            player.Ship.PositionX = random.Next(0, maxX);
+            player.Ship.PositionY = random.Next(0, maxY);
+            player.Ship.Health = 100;
+            player.Ship.Heading = 0;
+        }
     }
 
     public void HandleShipMovement(LobbyMovePlayerMessage moveMessage)
@@ -121,6 +141,7 @@ public class MapUtil
 
         map.Asteroids.AddRange(newAsteroids);
 
+        signalRService.GetHub().SendAsync("MapInfoResponse", map);
         actor.Tell(new LobbyMapResponse(map));
     }
 

@@ -1,6 +1,8 @@
 ﻿using Akka.Actor;
 using Akka.Event;
+using Asteroids.API.Services;
 using Asteroids.Shared;
+using Microsoft.AspNetCore.SignalR.Client;
 using static Asteroids.API.Messages.LobbyMessages;
 using static Asteroids.API.Messages.LobbySupervisorMessages;
 
@@ -10,12 +12,14 @@ public class LobbySupervisorActor : ReceiveActor
 {
     private List<IActorRef> lobbies;
     private List<IActorRef> deactivatedLobbies;
+    private readonly SignalRService signalRService;
     protected ILoggingAdapter Log { get; } = Context.GetLogger();
 
-    public LobbySupervisorActor()
+    public LobbySupervisorActor(SignalRService signalRService)
     {
         lobbies = new();
         deactivatedLobbies = new();
+        this.signalRService = signalRService;
 
         Receive<LobbyCreateMessage>(_ => HandleCreatingLobby(Guid.NewGuid(), false));
         Receive<LobbyListMessage>(_ => HandleListLobbyMessage());
@@ -52,10 +56,10 @@ public class LobbySupervisorActor : ReceiveActor
 
     private void HandleCreatingLobby(Guid lobbyId, bool restarted)
     {
-        IActorRef lobby = Context.ActorOf(Akka.Actor.Props.Create(() => new LobbyActor(lobbyId, restarted, this.Self)), lobbyId.ToString());
+        IActorRef lobby = Context.ActorOf(Akka.Actor.Props.Create(() => new LobbyActor(lobbyId, restarted, this.Self, signalRService)), lobbyId.ToString());
         Context.Watch(lobby);        
         lobbies.Add(lobby);
-        Console.WriteLine($"Lobby {lobby.Path.Name} created");
+        signalRService.GetHub().SendAsync("LobbyListResponse", ListLobbies());
         Sender.Tell(new LobbyListResponse(ListLobbies()));
     }
 
@@ -85,6 +89,7 @@ public class LobbySupervisorActor : ReceiveActor
 
     private void HandleListLobbyMessage()
     {
+        signalRService.GetHub().SendAsync("LobbyListResponse", ListLobbies());
         Sender.Tell(new LobbyListResponse(ListLobbies()));
     }    
 
@@ -252,5 +257,5 @@ public class LobbySupervisorActor : ReceiveActor
         }
     }
 
-    public static Props Props() => Akka.Actor.Props.Create(() => new LobbySupervisorActor());
+    public static Props Props(SignalRService signalRService) => Akka.Actor.Props.Create(() => new LobbySupervisorActor(signalRService));
 }

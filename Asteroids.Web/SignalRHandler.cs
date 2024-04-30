@@ -90,11 +90,11 @@ public class SignalRHandler
     }
 
     //Join Lobby
-    public async Task JoinLobby(Guid lobbyId, Player player)
+    public async Task JoinLobby(Guid lobbyId, string username)
     {
         try
         {
-            await hubConnection.SendAsync("JoinLobby", lobbyId, player);
+            await hubConnection.SendAsync("JoinLobby", lobbyId, username);
         }
         catch (Exception ex)
         {

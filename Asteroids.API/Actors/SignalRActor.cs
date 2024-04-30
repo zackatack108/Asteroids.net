@@ -60,9 +60,9 @@ public class SignalRActor : ReceiveActor
             lobbySupervisor.Ask(new LobbyTerminateMessage(lobbyId));
         });
 
-        hubConnection.On<Guid, Player>("JoinLobby", (lobbyId, player) =>
+        hubConnection.On<Guid, string>("JoinLobby", (lobbyId, username) =>
         {
-            lobbySupervisor.Ask(new LobbyJoinMessage(lobbyId, player));
+            lobbySupervisor.Ask(new LobbyJoinMessage(lobbyId, username));
         });
 
         hubConnection.On<Guid, LobbyState>("ChangeLobbyState", (lobbyId, state) =>
@@ -117,6 +117,7 @@ public class SignalRActor : ReceiveActor
     {
         try
         {
+            Console.WriteLine("Sending LobbyList");
             hubConnection.SendAsync("LobbyListResponse", response.lobbies);
         }
         catch (Exception ex)

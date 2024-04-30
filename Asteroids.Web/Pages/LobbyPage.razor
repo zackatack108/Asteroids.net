@@ -1,9 +1,12 @@
 ﻿@page "/lobby"
 @using Asteroids.Shared
 @inject SignalRHandler SignalRHandler
+@inject NavigationManager NavigationManager
 
 <h3>Create a Lobby</h3>
 <button @onclick="CreateLobby">Create Lobby</button>
+
+<input type="text" @bind="username" placeholder="Enter Username"/>
 
 <h3>List of Lobbies</h3>
 
@@ -48,6 +51,7 @@ else
 @code {
     private List<Lobby> lobbies = new();
     private string errorMessage = "";
+    private string username = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,9 +94,9 @@ else
     {
         try
         {
-            Ship ship = new Ship();
-            Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
-            await SignalRHandler.JoinLobby(lobbyId, player);
+            await SignalRHandler.JoinLobby(lobbyId, username);
+
+            NavigationManager.NavigateTo($"/Game/{lobbyId}/{username}");
         }
         catch(Exception ex)
         {

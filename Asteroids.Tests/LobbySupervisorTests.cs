@@ -2,8 +2,10 @@
 using Akka.TestKit;
 using Akka.TestKit.NUnit;
 using Asteroids.API.Actors;
+using Asteroids.API.Services;
 using Asteroids.Shared;
 using FluentAssertions;
+using System.Numerics;
 using static Asteroids.API.Messages.LobbyMessages;
 using static Asteroids.API.Messages.LobbySupervisorMessages;
 
@@ -11,6 +13,8 @@ namespace Asteroids.Tests;
 
 public class LobbySupervisorTests : TestKit
 {
+    SignalRService signalRService = new("http://test");
+
     public Guid Setup(IActorRef lobbySupervisor, TestProbe probe)
     {    
         lobbySupervisor.Tell(new LobbyCreateMessage(), probe.Ref);
@@ -22,7 +26,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Able_to_create_a_new_lobby()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
 
         lobbySupervisor.Tell(new LobbyCreateMessage(), probe.Ref);
@@ -34,7 +38,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Able_to_create_multiple_lobbies()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
 
         lobbySupervisor.Tell(new LobbyCreateMessage(), probe.Ref);
@@ -48,7 +52,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Able_to_get_info_about_a_lobby()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -62,15 +66,19 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Player_is_able_to_join_a_lobby()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
         Ship ship = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player = map.map.Players[0];
 
         lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
         var response = probe.ExpectMsg<LobbyMapResponse>(TimeSpan.FromSeconds(1));
@@ -82,7 +90,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Multiple_players_can_join_a_lobby()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -92,11 +100,16 @@ public class LobbySupervisorTests : TestKit
         Ship ship2 = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player2 = new Player { Username = "Cody", Bank = 0, Score = 0, Ship = ship2 };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player1), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player1.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player2), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player2.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player1 = map.map.Players[0];
+        player2 = map.map.Players[1];
 
         lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
         var response = probe.ExpectMsg<LobbyMapResponse>(TimeSpan.FromSeconds(1));
@@ -109,7 +122,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Map_size_is_able_to_be_set()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -125,7 +138,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Lobby_state_can_be_changed_to_active()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -141,7 +154,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Lobby_state_can_be_changed_to_resetting()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -157,7 +170,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Lobby_state_can_be_changed_to_inactive()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
@@ -171,18 +184,23 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Player_is_able_to_move_forward()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
         Ship ship = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
 
         lobbySupervisor.Tell(new LobbyChangeStateMessage(lobbyId, LobbyState.ACTIVE), probe.Ref);
         probe.ExpectMsg<LobbyStateResponse>(TimeSpan.FromSeconds(1));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player = map.map.Players[0];
+        int posx = player.Ship.PositionX;
 
         var direction = new MovementDirection();
         direction.MoveForward = true;
@@ -191,25 +209,30 @@ public class LobbySupervisorTests : TestKit
         lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
         var response = probe.ExpectMsg<LobbyMapResponse>(TimeSpan.FromSeconds(1));
 
-        response.map.Players[0].Ship.PositionX.Should().Be(51);
-        response.map.Players[0].Ship.PositionY.Should().Be(50);
+        response.map.Players[0].Ship.PositionX.Should().Be(posx+1);
+        response.map.Players[0].Ship.PositionY.Should().Be(player.Ship.PositionY);
     }
 
     [Test]
     public void Player_is_able_to_move_backward()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
         Ship ship = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
 
         lobbySupervisor.Tell(new LobbyChangeStateMessage(lobbyId, LobbyState.ACTIVE), probe.Ref);
         probe.ExpectMsg<LobbyStateResponse>(TimeSpan.FromSeconds(1));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player = map.map.Players[0];
+        int posx = player.Ship.PositionX;
 
         var direction = new MovementDirection();
         direction.MoveBackward = true;
@@ -218,25 +241,29 @@ public class LobbySupervisorTests : TestKit
         lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
         var response = probe.ExpectMsg<LobbyMapResponse>(TimeSpan.FromSeconds(1));
 
-        response.map.Players[0].Ship.PositionX.Should().Be(49);
-        response.map.Players[0].Ship.PositionY.Should().Be(50);
+        response.map.Players[0].Ship.PositionX.Should().Be(posx-1);
+        response.map.Players[0].Ship.PositionY.Should().Be(player.Ship.PositionY);
     }
 
     [Test]
     public void Player_is_able_to_turn_left()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
         Ship ship = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player), probe.Ref);
-        probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player.Username), probe.Ref);
+        probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));        
 
         lobbySupervisor.Tell(new LobbyChangeStateMessage(lobbyId, LobbyState.ACTIVE), probe.Ref);
         probe.ExpectMsg<LobbyStateResponse>(TimeSpan.FromSeconds(1));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player = map.map.Players[0];
 
         var direction = new MovementDirection();
         direction.TurnLeft = true;
@@ -251,18 +278,22 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Player_is_able_to_turn_right()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 
         Ship ship = new Ship { PositionX = 50, PositionY = 50, Heading = 0, Health = 100 };
         Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
 
-        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player), probe.Ref);
+        lobbySupervisor.Tell(new LobbyJoinMessage(lobbyId, player.Username), probe.Ref);
         probe.ExpectMsg<LobbyJoinResponse>(TimeSpan.FromSeconds(3));
 
         lobbySupervisor.Tell(new LobbyChangeStateMessage(lobbyId, LobbyState.ACTIVE), probe.Ref);
         probe.ExpectMsg<LobbyStateResponse>(TimeSpan.FromSeconds(1));
+
+        lobbySupervisor.Tell(new LobbyGetMapMessage(lobbyId), probe.Ref);
+        var map = probe.ExpectMsg<LobbyMapResponse>();
+        player = map.map.Players[0];
 
         var direction = new MovementDirection();
         direction.TurnRight = true;
@@ -277,7 +308,7 @@ public class LobbySupervisorTests : TestKit
     [Test]
     public void Lobby_will_be_restarted_when_it_crashes()
     {
-        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props());
+        var lobbySupervisor = this.Sys.ActorOf(LobbySupervisorActor.Props(signalRService));
         var probe = CreateTestProbe();
         var lobbyId = Setup(lobbySupervisor, probe);
 

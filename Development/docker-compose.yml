@@ -20,41 +20,41 @@ services:
     depends_on:
       - asteroid-signalr
 
-  # asteroid-api-2:
-  #   container_name: asteroid-api-2
-  #   build:
-  #     context: ..
-  #     dockerfile: ./Asteroids.API/Dockerfile
-  #   environment:
-  #     SIGNALRHUB: "http://hub.localhost/asteroidHub"
-  #     ACTORSYSTEM: "asteroids-actor-system"
-  #     CLUSTER_PORT: "8081"
-  #     CLUSTER_IP: "asteroid-api-2"
-  #     CLUSTER_SEED: "asteroid-api-1:8081"
-  #     CLUSTER_ROLES: "lobby, signalR"     
-  #   ports:
-  #     - 1996:8081
-  #     - 1997:8080
-  #   depends_on:
-  #     - asteroid-signalr
+  asteroid-api-2:
+    container_name: asteroid-api-2
+    build:
+      context: ..
+      dockerfile: ./Asteroids.API/Dockerfile
+    environment:
+      SIGNALRHUB: "http://asteroid-signalr:8082/asteroidHub"
+      ACTORSYSTEM: "asteroids-actor-system"
+      CLUSTER_PORT: "8081"
+      CLUSTER_IP: "asteroid-api-2"
+      CLUSTER_SEED: "asteroid-api-1:8081"
+      CLUSTER_ROLES: "lobby, signalR"     
+    ports:
+      - 1996:8081
+      - 1997:8080
+    depends_on:
+      - asteroid-signalr
 
-  # asteroid-api-3:
-  #   container_name: asteroid-api-3
-  #   build:
-  #     context: ..
-  #     dockerfile: ./Asteroids.API/Dockerfile
-  #   environment:
-  #     SIGNALRHUB: "http://hub.localhost/asteroidHub"
-  #     ACTORSYSTEM: "asteroids-actor-system"
-  #     CLUSTER_PORT: "8081"
-  #     CLUSTER_IP: "asteroid-api-3"
-  #     CLUSTER_SEED: "asteroid-api-1:8081"
-  #     CLUSTER_ROLES: "lobby, signalR"     
-  #   ports:
-  #     - 1998:8081
-  #     - 1999:8080
-  #   depends_on:
-  #     - asteroid-signalr
+  asteroid-api-3:
+    container_name: asteroid-api-3
+    build:
+      context: ..
+      dockerfile: ./Asteroids.API/Dockerfile
+    environment:
+      SIGNALRHUB: "http://asteroid-signalr:8082/asteroidHub"
+      ACTORSYSTEM: "asteroids-actor-system"
+      CLUSTER_PORT: "8081"
+      CLUSTER_IP: "asteroid-api-3"
+      CLUSTER_SEED: "asteroid-api-1:8081"
+      CLUSTER_ROLES: "lobby, signalR"     
+    ports:
+      - 1998:8081
+      - 1999:8080
+    depends_on:
+      - asteroid-signalr
 
   asteroid-signalr:
     container_name: asteroid-signalr

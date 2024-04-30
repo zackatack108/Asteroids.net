@@ -1,6 +1,143 @@
-﻿@page "/Game";
-<h3>Game</h3>
+﻿@page "/Game/{LobbyId}/{Username}"
+@using Asteroids.Shared
+@inherits LayoutComponentBase
+@inject SignalRHandler signalRHandler
+
+<div style="position: relative; width: @(Map?.Width ?? 500)px; height: @(Map?.Height ?? 500)px; border: 1px solid black;" tabindex="0" @onkeydown="HandleKeyDown" @onkeyup="HandleKeyUp" @onfocusin="OnFocusIn">
+    @if (Map != null && player != null)
+    {
+        @foreach (var otherPlayer in Map.Players.Where(p => p.Username != player.Username))
+        {
+            <div style="position: absolute; left: @(otherPlayer.Ship.PositionX)px; top: @(otherPlayer.Ship.PositionY)px; color: blue;">@otherPlayer.Username</div>
+        }
+
+        <img src="/rocket.svg" style="position: absolute; left: @(player.Ship.PositionX)px; top: @(player.Ship.PositionY)px; color: red;" />
+
+        @foreach (var asteroid in Map.Asteroids)
+        {
+            <img src="/spaceasteroid.svg" style="position: absolute; left: @(asteroid.PositionX)px; top: @(asteroid.PositionY)px; color: brown;" />
+        }
+    }
+</div>
+
+@if (lobby != null && lobby.State == LobbyState.JOINING)
+{
+    <button @onclick="StartGame">Start Game</button>
+}
+
+@if (lobby != null && lobby.State != LobbyState.INACTIVE)
+{
+    <button @onclick="KillGame">Kill Game</button>
+}
 
 @code {
+    [Parameter]
+    public string Username { get; set; }
 
+    [Parameter]
+    public string LobbyId { get; set; }
+
+    private Player player;
+    private Map Map { get; set; }
+    private MovementDirection currentDirection = new MovementDirection();
+    private Guid LobbyGuid;
+    private Lobby lobby;
+
+    protected override async Task OnInitializedAsync()
+    {
+        signalRHandler.MapInfoReceived += HandleMapInfoReceived;
+        signalRHandler.LobbyInfoReceived += HandleLobbyInfoReceived;
+
+        Guid.TryParse(LobbyId, out LobbyGuid);
+
+        Console.WriteLine($"LobbyId: {LobbyId}");
+
+        await signalRHandler.GetMapInfo(LobbyGuid);
+        await signalRHandler.GetLobbyInfo(LobbyGuid);
+    }
+
+    private void HandleMapInfoReceived(Map map)
+    {
+        Map = map;
+        player = map.Players.FirstOrDefault(x => x.Username == Username);
+        StateHasChanged();
+    }
+
+    private void HandleLobbyInfoReceived(Lobby lobby)
+    {
+        this.lobby = lobby;
+        StateHasChanged();
+    }
+
+    public async Task MoveShip(MovementDirection direction)
+    {
+        await signalRHandler.MapMovePlayer(LobbyGuid, player, direction);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "w" || e.Key == "W")
+        {
+            currentDirection.MoveForward = true;
+        }
+        else if (e.Key == "s" || e.Key == "S")
+        {
+            currentDirection.MoveBackward = true;
+        }
+        else if (e.Key == "a" || e.Key == "A")
+        {
+            currentDirection.TurnLeft = true;
+        }
+        else if (e.Key == "d" || e.Key == "D")
+        {
+            currentDirection.TurnRight = true;
+        }
+
+        await MoveShip(currentDirection);
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "w" || e.Key == "W")
+        {
+            currentDirection.MoveForward = false;
+        }
+        else if (e.Key == "s" || e.Key == "S")
+        {
+            currentDirection.MoveBackward = false;
+        }
+        else if (e.Key == "a" || e.Key == "A")
+        {
+            currentDirection.TurnLeft = false;
+        }
+        else if (e.Key == "d" || e.Key == "D")
+        {
+            currentDirection.TurnRight = false;
+        }
+
+        await MoveShip(currentDirection);
+    }
+
+    private async Task OnFocusIn(FocusEventArgs e)
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task StartGame()
+    {
+        if (Map != null)
+        {
+            lobby.State = LobbyState.ACTIVE;
+            await signalRHandler.ChangeLobbyState(LobbyGuid, lobby.State);
+        }
+    }
+
+    private async Task KillGame()
+    {
+        if (Map != null)
+        {
+            lobby.State = LobbyState.INACTIVE;
+            await signalRHandler.ChangeLobbyState(LobbyGuid, lobby.State);
+        }
+    }
 }

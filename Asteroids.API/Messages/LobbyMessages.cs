@@ -5,7 +5,7 @@ namespace Asteroids.API.Messages;
 public class LobbyMessages
 {
     //Receiving messages
-    public record LobbyJoinMessage(Guid lobbyId, Player player);
+    public record LobbyJoinMessage(Guid lobbyId, string username);
     public record LobbyChangeStateMessage(Guid lobbyId, LobbyState state);
     public record LobbyCurrentStateMessage(Guid lobbyId);
     public record LobbyInfoMessage(Guid lobbyId);
