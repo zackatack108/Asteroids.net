@@ -30,6 +30,7 @@ public class LobbySupervisorActor : ReceiveActor
         Receive<LobbySetMapSizeMessage>(ForwardMapSizeMessage);
 
         Receive<Terminated>(HandleLobbyTerminated);
+
     }
 
     private void HandleLobbyCrash(LobbyCrashMessage message)
@@ -54,10 +55,11 @@ public class LobbySupervisorActor : ReceiveActor
         IActorRef lobby = Context.ActorOf(Akka.Actor.Props.Create(() => new LobbyActor(lobbyId, restarted, this.Self)), lobbyId.ToString());
         Context.Watch(lobby);        
         lobbies.Add(lobby);
-        HandleListLobbyMessage();
+        Console.WriteLine($"Lobby {lobby.Path.Name} created");
+        Sender.Tell(new LobbyListResponse(ListLobbies()));
     }
 
-    private void HandleListLobbyMessage()
+    private List<Lobby> ListLobbies()
     {
         var lobbyList = new List<Lobby>();
 
@@ -68,7 +70,7 @@ public class LobbySupervisorActor : ReceiveActor
             if (Guid.TryParse(lobbyIdString, out Guid lobbyId))
             {
                 var lobbyInfoResponse = lobbyActorRef.Ask<LobbyInfoResponse>(new LobbyInfoMessage(lobbyId));
-                if(lobbyInfoResponse != null)
+                if (lobbyInfoResponse != null)
                 {
                     lobbyList.Add(lobbyInfoResponse.Result.lobby);
                 }
@@ -78,8 +80,12 @@ public class LobbySupervisorActor : ReceiveActor
                 Log.Error($"Invalid lobby ID format: {lobbyIdString}");
             }
         }
+        return lobbyList;
+    }
 
-        Sender.Tell(new LobbyListResponse(lobbyList));
+    private void HandleListLobbyMessage()
+    {
+        Sender.Tell(new LobbyListResponse(ListLobbies()));
     }    
 
     private void HandleTerminateLobbyMessage(LobbyTerminateMessage message)

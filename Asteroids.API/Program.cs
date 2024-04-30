@@ -2,6 +2,10 @@ using Asteroids.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string signalRHubUrl = builder.Configuration.GetSection("SIGNALRHUB").Value ?? "";
+
+if (signalRHubUrl == null || signalRHubUrl == "${SIGNALRHUB}") signalRHubUrl = "http://localhost:5000/asteroidHub";
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -9,6 +13,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<SignalRService>(provider =>
+{
+    return new SignalRService(signalRHubUrl);
+});
 builder.Services.AddSingleton<IHostedService, ClusterAkkaService>();
 
 var app = builder.Build();
@@ -23,5 +31,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors(policy =>
+    policy
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+    );
 
 app.Run();

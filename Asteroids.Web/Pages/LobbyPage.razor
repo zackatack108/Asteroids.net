@@ -1,0 +1,107 @@
+﻿@page "/lobby"
+@using Asteroids.Shared
+@inject SignalRHandler SignalRHandler
+
+<h3>Create a Lobby</h3>
+<button @onclick="CreateLobby">Create Lobby</button>
+
+<h3>List of Lobbies</h3>
+
+@if(lobbies == null || !lobbies.Any())
+{
+    <p>No lobbies available.</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Lobby ID</th>
+                <th>Players</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lobby in lobbies)
+            {
+                <tr>
+                    <td>@lobby.LobbyId</td>
+                    <td>@string.Join(", ", lobby.Map.Players.Select(p => p.Username))</td>
+                    <td>@lobby.State</td>
+                    <td>
+                        @if (lobby.State == LobbyState.JOINING)
+                        {
+                            <button @onclick="() => JoinLobby(lobby.LobbyId)">Join</button>
+                        }
+                        else
+                        {
+                            <button disabled>Join</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Lobby> lobbies = new();
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        SignalRHandler.LobbyListReceived += HandleLobbyListReceived;
+        await LoadLobbies();
+    }
+
+    private async Task LoadLobbies()
+    {
+        try
+        {
+            await SignalRHandler.GetLobbies();
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"Error loading lobbies: {ex.Message}";
+        }
+    }
+
+    private void HandleLobbyListReceived(List<Lobby> receivedLobbies)
+    {
+        lobbies = receivedLobbies;
+        StateHasChanged();
+    }
+
+    private async Task CreateLobby()
+    {
+        try
+        {
+            await SignalRHandler.CreateLobby();
+            await LoadLobbies();
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"Error creating lobby: {ex.Message}";
+        }
+    }
+
+    private async Task JoinLobby(Guid lobbyId)
+    {
+        try
+        {
+            Ship ship = new Ship();
+            Player player = new Player { Username = "Zack", Bank = 0, Score = 0, Ship = ship };
+            await SignalRHandler.JoinLobby(lobbyId, player);
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"Error joining lobby: {ex.Message}";
+        }
+    }
+
+    public void Dispose()
+    {
+        SignalRHandler.LobbyListReceived -= HandleLobbyListReceived;
+    }
+}

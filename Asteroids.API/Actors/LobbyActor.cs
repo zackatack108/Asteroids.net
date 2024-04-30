@@ -101,12 +101,12 @@ public class LobbyActor : ReceiveActor, IWithTimers
                 Log.Warning($"Unsupported lobby state: {newState.state}");
                 break;
         }
-        Sender.Tell(new LobbyStateResponse(lobby.State));
+        Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
     }
 
     private void GetState(LobbyCurrentStateMessage state)
     {
-        Sender.Tell(new LobbyStateResponse(lobby.State));
+        Sender.Tell(new LobbyStateResponse(lobby.LobbyId, lobby.State));
     }
     
     private void GetInfo(LobbyInfoMessage info)

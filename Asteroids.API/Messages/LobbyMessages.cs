@@ -17,7 +17,7 @@ public class LobbyMessages
 
     //Response messages
     public record LobbyJoinResponse(Lobby lobby);
-    public record LobbyStateResponse(LobbyState state);
+    public record LobbyStateResponse(Guid lobbyId, LobbyState state);
     public record LobbyInfoResponse(Lobby lobby);
     public record LobbyMapResponse(Map map);
     public record LobbyErrorResponse(string errorMsg);
